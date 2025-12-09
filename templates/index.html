@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess the Number</title>
+</head>
+<body>
+    <h1>Guess the Number Game</h1>
+
+    <div id="registrationArea">
+        <h2>Player Registration</h2>
+        <input type="text" id="nameInput" placeholder="Enter your full name">
+        <button id="registerButton">Register and Play</button>
+        <p id="registrationMessage"></p>
+    </div>
+
+    <div id="gameArea" style="display: none;">
+        <p>Welcome, <span id="playerName"></span>!</p>
+        <p>Guess a number between 0 and 100.</p>
+        <p>Available numbers: <span id="numberList"></span></p>
+        <input type="number" id="guessInput" min="0" max="100">
+        <button id="guessButton">Guess</button>
+        <p id="message"></p>
+    </div>
+
+    <script>
+        const registrationArea = document.getElementById('registrationArea');
+        const nameInput = document.getElementById('nameInput');
+        const registerButton = document.getElementById('registerButton');
+        const registrationMessage = document.getElementById('registrationMessage');
+
+        const gameArea = document.getElementById('gameArea');
+        const playerName = document.getElementById('playerName');
+        const numberList = document.getElementById('numberList');
+        const guessInput = document.getElementById('guessInput');
+        const guessButton = document.getElementById('guessButton');
+        const message = document.getElementById('message');
+
+        registerButton.addEventListener('click', registerPlayer);
+        guessButton.addEventListener('click', makeGuess);
+
+        function registerPlayer() {
+            const name = nameInput.value;
+
+            fetch('/game/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    registrationArea.style.display = 'none';
+                    gameArea.style.display = 'block';
+                    playerName.textContent = data.player_name;
+                    startGame();
+                } else {
+                    registrationMessage.textContent = data.message;
+                }
+            });
+        }
+
+        function startGame() {
+            fetch('/game/start')
+                .then(response => response.json())
+                .then(data => {
+                    numberList.textContent = data.lucky_list.join(', ');
+                    message.textContent = data.message;
+                });
+        }
+
+        function makeGuess() {
+            const guess = guessInput.value;
+            fetch(`/game/guess/${guess}`)
+                .then(response => response.json())
+                .then(data => {
+                    message.textContent = data.message;
+                    if (data.numbers_to_show) {
+                        numberList.textContent = data.numbers_to_show.join(', ');
+                    } else {
+                        gameArea.style.display = 'none';
+                        registrationArea.style.display = 'block';
+                        nameInput.value = '';
+                        registrationMessage.textContent = data.message;
+                    }
+                });
+        }
+    </script>
+</body>
+</html>
